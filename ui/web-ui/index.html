@@ -1,0 +1,448 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AES Again — Pro Plus</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg1:#faf6ff; --bg2:#eef7ff; --card:#ffffff; --text:#0b0f14; --muted:#f3f6fb; --sub:#5a6a7d;
+  --border:#e5e9f2; --accent1:#6d5efc; --accent2:#28c9a5; --accent3:#ff7ab6;
+  --shadow:0 10px 35px rgba(28,35,42,.12);
+}
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;font-family:Poppins,system-ui,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(140deg,var(--bg1),var(--bg2)) fixed;color:var(--text)}
+a{color:var(--accent1);text-decoration:none}
+.container{max-width:1200px;margin:0 auto;padding:28px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:42px;height:42px;border-radius:14px;background:conic-gradient(from 210deg at 50% 50%,#ffd467 0 30%,#ff9f6e 30% 60%,#ff7ab6 60% 85%,#6d5efc 85% 100%);display:grid;place-items:center;color:#111;font-weight:700}
+.brand h1{font-size:22px;margin:0}
+.links{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.select{background:#ffffff80;border:1px solid var(--border);backdrop-filter:blur(6px);border-radius:12px;padding:8px 10px}
+.btn{appearance:none;border:0;border-radius:14px;padding:10px 14px;font-weight:700;cursor:pointer;transition:transform .05s ease}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(135deg,var(--accent1),#2aa8ff);color:#fff}
+.btn.success{background:linear-gradient(135deg,var(--accent2),#56e0bf);color:#07332a}
+.btn.ghost{background:#ffffff80;border:1px solid var(--border)}
+.section{display:none} .section.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
+.card.pad{padding:22px}
+.grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:center}
+@media(max-width:980px){.grid2{grid-template-columns:1fr}}
+.h1{font-size:40px;line-height:1.05;margin:4px 0 10px 0}
+.sub{color:var(--sub)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+@media(max-width:980px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{padding:16px;border-radius:16px;background:linear-gradient(135deg,#ffffff, #f7fbff);border:1px solid var(--border);box-shadow:var(--shadow)}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:18px}@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.label{font-size:12px;color:var(--sub);margin-bottom:6px}
+select,input[type=text],textarea{width:100%;background:var(--muted);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-family:Poppins}
+textarea{min-height:140px;resize:vertical}
+.switch{display:flex;gap:8px;align-items:center;margin:8px 0}
+.mono{font-family:"JetBrains Mono",monospace}
+.output{font-family:"JetBrains Mono",monospace;background:var(--muted);border:1px dashed var(--border);border-radius:12px;padding:14px;word-break:break-all;min-height:84px}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pill{font-size:12px;border:1px solid var(--border);border-radius:999px;padding:7px 10px;color:var(--sub);background:#fff}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--muted);color:var(--sub);cursor:pointer}
+.tab.active{background:linear-gradient(135deg,var(--accent1),#2aa8ff);color:#fff;border-color:transparent}
+.drop{border:2px dashed #cfe0ff;border-radius:16px;padding:18px;text-align:center;color:#6a7aa0;background:#f7fbff}
+.file-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.file-row{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.footer{margin-top:18px;color:var(--sub);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.toast{position:fixed;right:20px;bottom:20px;background:#111827;color:#fff;border-radius:12px;padding:12px 16px;opacity:0;transform:translateY(10px);transition:all .25s}
+.toast.show{opacity:1;transform:translateY(0)}
+.progress{position:fixed;left:0;top:0;height:4px;background:linear-gradient(90deg,var(--accent1),var(--accent3));width:0;transition:width .2s ease}
+.badge{display:none}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="container">
+  <div class="nav">
+    <div class="brand">
+      <div class="logo">🔐</div>
+      <div>
+        <h1 style="margin:0;font-size:20px">AES Again</h1>
+        <div class="sub" style="font-size:12px">ECB • CBC • CFB • OFB • CTR</div>
+      </div>
+    </div>
+    <div class="links">
+      <select id="themePick" class="select">
+        <option value="violet">Violet</option>
+        <option value="teal">Teal</option>
+        <option value="sunset">Sunset</option>
+      </select>
+      <button class="btn ghost" data-nav="home">Home</button>
+      <button class="btn ghost" data-nav="tour">How it works</button>
+      <a class="btn primary" href="#" id="go-app">Open App</a>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="home" class="section active">
+    <div class="grid2">
+      <div class="card pad">
+        <div class="sub" style="font-weight:600;color:#6a7aa0">Welcome</div>
+        <div class="h1">Encrypt anything in your browser</div>
+        <div class="sub">Choose a mode, paste text or upload files, then copy the result or download a zip. Nothing leaves your device.</div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <a class="btn primary" href="#" id="cta-start">Start now</a>
+          <a class="btn success" href="#" data-nav="tour">See how it works</a>
+          <div class="dropdown">
+            <button class="btn ghost" id="shareMenuBtn">Share</button>
+            <div class="dropdown-menu" id="shareMenu" style="display:none;position:absolute;right:0;top:44px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);min-width:240px;z-index:2">
+              <div class="item" id="copySetupLink" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border)">Copy setup link</div>
+              <div class="item" id="openQR" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border)">Show QR code</div>
+              <div class="item" id="copyReadme" style="padding:10px 12px;cursor:pointer;">Copy quick README</div>
+            </div>
+          </div>
+        </div>
+        <div class="tiles">
+          <div class="tile"><h4>Beautiful & fast</h4><div class="sub">Modern design, instant results, ⌘/Ctrl+Enter.</div></div>
+          <div class="tile"><h4>Text + batch files</h4><div class="sub">Drop multiple files and download a single zip output.</div></div>
+          <div class="tile"><h4>Copy-friendly</h4><div class="sub">Copy hex/text/base64 with one click.</div></div>
+        </div>
+      </div>
+      <div class="card pad">
+        <div class="sub" style="margin-bottom:6px">Quick demo (CBC, enc, 128‑bit key, input “ABC”)</div>
+        <div id="demo-out" class="output mono" style="height:170px"></div>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn primary" id="run-demo">Run demo</button>
+          <a class="btn ghost" href="#" id="demo-to-app">Open with these values</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOUR -->
+  <div id="tour" class="section">
+    <div class="card pad">
+      <div class="h1" style="font-size:28px;margin-bottom:8px">How it works</div>
+      <ol class="sub" style="line-height:1.7">
+        <li>Pick a <b>mode</b> and <b>operation</b>.</li>
+        <li>Enter a hex <b>key</b> (128/192/256‑bit). For CTR, set the <b>counter</b>. For others, IV defaults to zeros.</li>
+        <li>Choose <b>output format</b>: Text / HEX / Base64.</li>
+        <li>Paste text or use the <b>File</b> tab to drop files.</li>
+        <li>Press <b>Run</b>. Copy or download results.</li>
+      </ol>
+      <div style="margin-top:10px"><a href="#" class="btn primary" id="tour-open-app">Got it — open app</a></div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="section">
+    <div class="grid">
+      <div class="card pad">
+        <div class="label">Mode</div>
+        <select id="mode">
+          <option value="cbc">cbc</option><option value="ecb">ecb</option>
+          <option value="cfb">cfb</option><option value="ofb">ofb</option><option value="ctr">ctr</option>
+        </select>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+          <div><div class="label">Operation</div>
+            <select id="op"><option value="enc">enc</option><option value="dec">dec</option></select>
+          </div>
+          <div><div class="label">Key (hex)</div><input id="key" type="text" class="mono" placeholder="2b7e151628aed2a6abf7158809cf4f3c"><div id="keyErr" class="inline-alert">Key length must be 16/24/32 bytes hex.</div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+          <div><div class="label">Counter (CTR, 16 bytes hex)</div><input id="ctr" type="text" class="mono" placeholder="f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"><div id="ctrErr" class="inline-alert">CTR must be 16 bytes hex.</div></div>
+          <div><div class="label">IV (zeros for CBC/CFB/OFB)</div><input id="iv" type="text" class="mono" placeholder="00000000000000000000000000000000"><div id="ivErr" class="inline-alert">IV must be 16 bytes hex.</div></div>
+        </div>
+
+        <div class="chips" id="presetChips"></div>
+
+        <div class="switch"><input id="autoHex" type="checkbox" checked><label for="autoHex">Auto-detect hex</label></div>
+
+        <div class="switch">
+          <label class="label" style="margin:0 8px 0 0">Output format</label>
+          <select id="outFmt" class="select">
+            <option value="text">Text (UTF‑8)</option>
+            <option value="hex">HEX</option>
+            <option value="base64">Base64</option>
+          </select>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn primary" id="runBtn">Run ⏎</button>
+          <button class="btn ghost" id="copyHex">Copy Output</button>
+          <button class="btn ghost" id="downloadTxt">Download .txt</button>
+          <button class="btn ghost" id="savePreset">Save configuration</button>
+          <div style="position:relative">
+            <button class="btn success" id="historyBtn">History</button>
+            <div class="dropdown-menu" id="historyMenu" style="display:none"></div>
+          </div>
+          <button class="btn success" data-nav="home">← Home</button>
+        </div>
+
+        <div class="pills">
+          <div class="pill" id="statMode">mode: cbc</div>
+          <div class="pill" id="statOp">op: enc</div>
+          <div class="pill" id="statKey">key: 0‑bit</div>
+          <div class="pill" id="statSizes">0 → 0 bytes</div>
+          <div class="pill" id="statTime">0 ms</div>
+        </div>
+
+        <div class="stat-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">
+          <div class="stat"><div class="label">Format</div><div id="statFmt">text</div></div>
+          <div class="stat"><div class="label">Theme</div><div id="statTheme">Violet</div></div>
+          <div class="stat"><div class="label">Runs</div><div id="statRuns">0</div></div>
+        </div>
+      </div>
+
+      <div class="card pad">
+        <div class="tabs">
+          <div class="tab active" data-tab="text">Text</div>
+          <div class="tab" data-tab="file">File</div>
+        </div>
+        <div id="tab-text">
+          <div class="label">Input</div>
+          <textarea id="input" placeholder="Paste or type here…"></textarea>
+          <div class="label" style="margin-top:10px">Output</div>
+          <div id="output" class="output"></div>
+        </div>
+        <div id="tab-file" style="display:none">
+          <div class="chips" style="margin-top:0">
+            <label class="select">Name template
+              <select id="nameTpl" class="select">
+                <option value="{name}.{mode}">{name}.{mode}</option>
+                <option value="{name}.out">{name}.out</option>
+                <option value="{name}.{op}">{name}.{op}</option>
+              </select>
+            </label>
+          </div>
+          <div id="drop" class="drop">Drag & drop files/folders here or click to browse</div>
+          <div style="display:flex;gap:10px;margin-top:8px">
+            <input id="filePicker" type="file" multiple style="display:none">
+            <input id="folderPicker" type="file" webkitdirectory directory style="display:none">
+            <button class="btn ghost" id="pickFilesBtn">Choose files</button>
+            <button class="btn ghost" id="pickFolderBtn">Choose folder</button>
+          </div>
+          <div id="fileList" class="file-list"></div>
+          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn primary" id="processFiles">Run on files</button>
+            <button class="btn ghost" id="downloadZip">Download zip</button>
+          </div>
+          <div id="zipPreview" class="file-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>Made by Sleiman Koumaira, Ahmad Karnib, Sidra Smadi, and Khalil Ayoub</div>
+      <div>Settings persist locally</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="qrModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:20px;min-width:280px">
+    <div id="qrcode" style="margin:auto"></div>
+    <div style="text-align:center;margin-top:10px"><button class="btn ghost" id="closeQR">Close</button></div>
+  </div>
+</div>
+
+<script>
+// THEME
+const themePick=document.getElementById('themePick')
+function applyTheme(t){
+  const r=document.documentElement
+  if(t==='teal'){r.style.setProperty('--bg1','#eafffa');r.style.setProperty('--bg2','#e4f7ff');r.style.setProperty('--accent1','#00bfa6');r.style.setProperty('--accent2','#1ed3b5');r.style.setProperty('--accent3','#00a1ff')}
+  else if(t==='sunset'){r.style.setProperty('--bg1','#fff4ec');r.style.setProperty('--bg2','#fff0f5');r.style.setProperty('--accent1','#ff7a59');r.style.setProperty('--accent2','#ffb86b');r.style.setProperty('--accent3','#e056fd')}
+  else{r.style.setProperty('--bg1','#faf6ff');r.style.setProperty('--bg2','#eef7ff');r.style.setProperty('--accent1','#6d5efc');r.style.setProperty('--accent2','#28c9a5');r.style.setProperty('--accent3','#ff7ab6')}
+  localStorage.setItem('aes-theme',t); document.getElementById('statTheme').textContent=t[0].toUpperCase()+t.slice(1)
+}
+themePick.addEventListener('change',e=>applyTheme(e.target.value))
+applyTheme(localStorage.getItem('aes-theme')||'violet'); themePick.value=localStorage.getItem('aes-theme')||'violet'
+
+// NAV
+function showPage(id){['home','tour','app'].forEach(x=>document.getElementById(x).classList.remove('active'));document.getElementById(id).classList.add('active')}
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();showPage(b.getAttribute('data-nav'))}))
+document.getElementById('go-app').addEventListener('click',e=>{e.preventDefault();showPage('app')})
+document.getElementById('cta-start').addEventListener('click',e=>{e.preventDefault();showPage('app')})
+document.getElementById('tour-open-app').addEventListener('click',e=>{e.preventDefault();showPage('app')})
+
+// TOAST
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1800)}
+
+// HELP SHORTCUTS
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();runText()}})
+
+// CRYPTO HELPERS
+function hexToBytes(hex){if(hex.length%2)throw new Error('odd-length hex');const out=new Uint8Array(hex.length/2);for(let i=0;i<out.length;i++)out[i]=parseInt(hex.substr(i*2,2),16);return out}
+function bytesToHex(u8){let s='';for(let i=0;i<u8.length;i++)s+=u8[i].toString(16).padStart(2,'0');return s}
+function bytesToBase64(u8){let bin='';for(let i=0;i<u8.length;i++)bin+=String.fromCharCode(u8[i]);return btoa(bin)}
+function uaToWA(u8){const words=[];for(let i=0;i<u8.length;i+=4)words.push(((u8[i]||0)<<24)|((u8[i+1]||0)<<16)|((u8[i+2]||0)<<8)|((u8[i+3]||0)<<0));return CryptoJS.lib.WordArray.create(words,u8.length)}
+function WAtoUa(w){const u8=new Uint8Array(w.sigBytes);let i=0;for(let j=0;j<w.words.length;j++){let v=w.words[j];for(let k=3;k>=0;k--)if(i<u8.length)u8[i++]=(v>>>(k*8))&0xff}return u8}
+function padZeroCount(u8){const r=u8.length%16;const p=r===0?16:16-r;const out=new Uint8Array(u8.length+p);out.set(u8);for(let i=u8.length;i<out.length-1;i++)out[i]=0;out[out.length-1]=p;return out}
+function unpadZeroCount(u8){if(u8.length===0||u8.length%16!==0)throw new Error('bad length');const p=u8[u8.length-1];if(p<1||p>16)throw new Error('bad pad');for(let i=u8.length-p;i<u8.length-1;i++)if(u8[i]!==0)throw new Error('bad pad');return u8.slice(0,u8.length-p)}
+function parseKey(hex){const k=hexToBytes(hex);if(!(k.length===16||k.length===24||k.length===32))throw new Error('key length invalid');return uaToWA(k)}
+function zeros16(){return new Uint8Array(16)}
+function runCrypto(mode,op,keyHex,ctrHex,ivHex,bytes){
+  const key=parseKey(keyHex)
+  let ivWA=uaToWA(zeros16()); if(ivHex) ivWA=uaToWA(hexToBytes(ivHex))
+  let cfg={iv:ivWA,mode:CryptoJS.mode.CBC,padding:CryptoJS.pad.NoPadding}
+  if(mode==='ecb') cfg={mode:CryptoJS.mode.ECB,padding:CryptoJS.pad.NoPadding}
+  if(mode==='cfb') cfg={iv:ivWA,mode:CryptoJS.mode.CFB,padding:CryptoJS.pad.NoPadding}
+  if(mode==='ofb') cfg={iv:ivWA,mode:CryptoJS.mode.OFB,padding:CryptoJS.pad.NoPadding}
+  if(mode==='ctr'){const c=ctrHex?hexToBytes(ctrHex):zeros16();cfg={iv:uaToWA(c),mode:CryptoJS.mode.CTR,padding:CryptoJS.pad.NoPadding}}
+  let inBytes=bytes
+  if(op==='enc'){if(mode!=='ctr') inBytes=padZeroCount(bytes)} else {if(inBytes.length%16!==0 && mode!=='ctr') throw new Error('bad length')}
+  const wa=uaToWA(inBytes)
+  const out=op==='enc'?CryptoJS.AES.encrypt(wa,key,cfg).ciphertext:CryptoJS.AES.decrypt({ciphertext:wa},key,cfg)
+  let u8=WAtoUa(out)
+  if(op==='dec' && mode!=='ctr') u8=unpadZeroCount(u8)
+  return u8
+}
+
+// INPUTS
+const modeEl=document.getElementById('mode'), opEl=document.getElementById('op')
+const keyEl=document.getElementById('key'), ivEl=document.getElementById('iv'), ctrEl=document.getElementById('ctr')
+const autoHex=document.getElementById('autoHex'), outFmt=document.getElementById('outFmt')
+const inputEl=document.getElementById('input'), outputEl=document.getElementById('output')
+const statRunsEl=document.getElementById('statRuns'), statFmtEl=document.getElementById('statFmt')
+
+// PRESETS
+const chipsBox=document.getElementById('presetChips')
+const presets=[
+  {name:'CBC demo', mode:'cbc', op:'enc', key:'2b7e151628aed2a6abf7158809cf4f3c', sample:'ABC'},
+  {name:'CTR demo', mode:'ctr', op:'enc', key:'2b7e151628aed2a6abf7158809cf4f3c', ctr:'f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff', sample:'ABC'},
+  {name:'OFB zeros', mode:'ofb', op:'enc', key:'00000000000000000000000000000000', sample:'hello'}
+]
+presets.forEach(p=>{const c=document.createElement('div');c.className='pill';c.textContent=p.name;c.style.cursor='pointer';c.onclick=()=>{modeEl.value=p.mode;opEl.value=p.op;keyEl.value=p.key;ctrEl.value=p.ctr||'';ivEl.value='';inputEl.value=p.sample||''};chipsBox.appendChild(c)})
+
+// VALIDATION
+function isHex(s){return /^[0-9a-fA-F]+$/.test(s)}
+function showInline(id,show){const el=document.getElementById(id);el.style.display=show?'block':'none'}
+function validate(){
+  let ok=true
+  const k=keyEl.value.trim()
+  if(k && (!isHex(k) || ![32,48,64].includes(k.length))) {showInline('keyErr',true); ok=false} else showInline('keyErr',false)
+  const iv=ivEl.value.trim(); if(iv && (!isHex(iv) || iv.length!==32)) {showInline('ivErr',true); ok=false} else showInline('ivErr',false)
+  const ctr=ctrEl.value.trim(); if(modeEl.value==='ctr' && (!ctr || !isHex(ctr) || ctr.length!==32)) {showInline('ctrErr',true); ok=false} else showInline('ctrErr',false)
+  return ok
+}
+[keyEl,ivEl,ctrEl,modeEl].forEach(el=>el.addEventListener('input',validate))
+
+// RUN TEXT
+let runCount = Number(localStorage.getItem('aes-runs')||0); statRunsEl.textContent=runCount
+function runText(){
+  if(!validate()){toast('Fix fields');return}
+  const mode=modeEl.value, op=opEl.value, key=keyEl.value.trim(), ctr=ctrEl.value.trim(), iv=ivEl.value.trim()
+  const auto=autoHex.checked, raw=inputEl.value
+  const t0=performance.now(); let bytes, format='text'
+  try{
+    if((auto) && /^[0-9a-fA-F\s]+$/.test(raw) && raw.replace(/\s+/g,'').length%2===0){
+      bytes=hexToBytes(raw.replace(/\s+/g,'')); format='hex'
+    } else { bytes=new TextEncoder().encode(raw) }
+    const out=runCrypto(mode,op,key,ctr,iv,bytes)
+    let str=''
+    if(outFmt.value==='hex'){str=bytesToHex(out)}
+    else if(outFmt.value==='base64'){str=bytesToBase64(out)}
+    else {str=new TextDecoder().decode(out).replace(/\u0000+$/,'')}
+    outputEl.textContent=str
+    document.getElementById('statMode').textContent='mode: '+mode
+    document.getElementById('statOp').textContent='op: '+op
+    document.getElementById('statKey').textContent='key: '+((key.length/2)*8||0)+'‑bit'
+    document.getElementById('statSizes').textContent=bytes.length+' → '+out.length+' bytes'
+    document.getElementById('statTime').textContent=Math.round(performance.now()-t0)+' ms'
+    statFmtEl.textContent = (format + ' → ' + outFmt.value)
+    // history & runs
+    const hist = JSON.parse(localStorage.getItem('aes-history')||'[]')
+    hist.unshift({t:Date.now(), out:str}); localStorage.setItem('aes-history', JSON.stringify(hist.slice(0,5)))
+    buildHistoryMenu()
+    runCount++; localStorage.setItem('aes-runs', runCount); statRunsEl.textContent=runCount
+  }catch(e){toast(e.message)}
+}
+document.getElementById('runBtn').addEventListener('click',runText)
+
+// COPY & TXT
+document.getElementById('copyHex').addEventListener('click',()=>{
+  const s=outputEl.textContent; if(!s){toast('nothing to copy');return}
+  navigator.clipboard.writeText(s).then(()=>toast('copied'))
+})
+document.getElementById('downloadTxt').addEventListener('click',()=>{
+  const s=outputEl.textContent; if(!s){toast('nothing to download');return}
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([s],{type:'text/plain'})); a.download='aes-again-output.txt'; a.click()
+})
+
+// HISTORY DROPDOWN
+const historyBtn=document.getElementById('historyBtn'), historyMenu=document.getElementById('historyMenu')
+historyBtn.addEventListener('click',()=>{historyMenu.style.display=historyMenu.style.display==='block'?'none':'block'})
+document.addEventListener('click',e=>{if(!historyBtn.contains(e.target) && !historyMenu.contains(e.target))historyMenu.style.display='none'})
+function buildHistoryMenu(){const hist=JSON.parse(localStorage.getItem('aes-history')||'[]');historyMenu.innerHTML='';if(hist.length===0){historyMenu.innerHTML='<div class="item" style="padding:10px 12px">No history yet</div>';return}hist.forEach(h=>{const it=document.createElement('div');it.className='item';it.style.padding='10px 12px';it.style.cursor='pointer';it.style.borderBottom='1px solid var(--border)';it.textContent=(h.out.length>42?h.out.slice(0,42)+'…':h.out);it.onclick=()=>navigator.clipboard.writeText(h.out).then(()=>toast('copied'));historyMenu.appendChild(it)})}
+buildHistoryMenu()
+
+// SAVE PRESETS
+document.getElementById('savePreset').addEventListener('click',()=>{
+  const name=prompt('Preset name?'); if(!name) return
+  const p={name, mode:modeEl.value, op:opEl.value, key:keyEl.value, ctr:ctrEl.value, iv:ivEl.value}
+  const mine=JSON.parse(localStorage.getItem('aes-presets')||'[]'); mine.push(p); localStorage.setItem('aes-presets', JSON.stringify(mine))
+  const c=document.createElement('div'); c.className='pill'; c.textContent=name; c.style.cursor='pointer'; c.onclick=()=>{modeEl.value=p.mode;opEl.value=p.op;keyEl.value=p.key;ctrEl.value=p.ctr;ivEl.value=p.iv;}
+  chipsBox.appendChild(c); toast('saved')
+})
+
+// FILES
+let files=[],zipBlob=null
+const drop=document.getElementById('drop'),picker=document.getElementById('filePicker'),folderPicker=document.getElementById('folderPicker')
+document.getElementById('pickFilesBtn')?.addEventListener('click',()=>picker.click())
+document.getElementById('pickFolderBtn')?.addEventListener('click',()=>folderPicker.click())
+function renderFiles(){const list=document.getElementById('fileList');list.innerHTML='';files.forEach(f=>{const row=document.createElement('div');row.className='file-row';row.innerHTML='<div>'+f.name+'</div><div>'+Math.round(f.size/1024)+' KB</div>';list.appendChild(row)})}
+picker?.addEventListener('change',e=>{files=[...e.target.files];renderFiles()})
+folderPicker?.addEventListener('change',e=>{files=[...e.target.files];renderFiles()})
+drop?.addEventListener('dragover',e=>{e.preventDefault()}); drop?.addEventListener('drop',e=>{e.preventDefault();files=[...e.dataTransfer.files];renderFiles()})
+function setProgress(p){document.getElementById('progress').style.width=(p*100)+'%'}
+document.getElementById('processFiles')?.addEventListener('click',async()=>{
+  if(!files.length){toast('no files');return}
+  if(!validate()){toast('Fix fields');return}
+  setProgress(0.01)
+  const m=modeEl.value, op=opEl.value, key=keyEl.value.trim(), ctr=ctrEl.value.trim(), iv=ivEl.value.trim(), tpl=document.getElementById('nameTpl').value
+  const zip=new JSZip(); const preview=document.getElementById('zipPreview'); preview.innerHTML=''
+  for(let i=0;i<files.length;i++){
+    const f=files[i]; const fr=new FileReader()
+    await new Promise(res=>{fr.onload=()=>{try{const data=new Uint8Array(fr.result);const out=runCrypto(m,op,key,ctr,iv,data);const name=tpl.replace('{name}', f.name).replace('{mode}', m).replace('{op}', op);zip.file(name,out);const row=document.createElement('div');row.className='file-row';row.innerHTML='<div>✓ '+name+'</div><div>'+Math.round(out.length/1024)+' KB</div>';preview.appendChild(row)}catch(e){const row=document.createElement('div');row.className='file-row';row.innerHTML='<div>✗ '+f.name+' ('+e.message+')</div>';preview.appendChild(row)}res()};fr.readAsArrayBuffer(f)})
+    setProgress((i+1)/files.length)
+  }
+  zipBlob=await zip.generateAsync({type:'blob'}); toast('ZIP ready'); setProgress(0)
+})
+document.getElementById('downloadZip')?.addEventListener('click',()=>{
+  if(!zipBlob){toast('nothing to download');return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(zipBlob);a.download='aes-again-results.zip';a.click()
+})
+
+// SHAREABLE LINK
+function currentConfig(withInput=true){
+  const cfg={mode:modeEl.value,op:opEl.value,key:keyEl.value,ctr:ctrEl.value,iv:ivEl.value,auto:autoHex.checked,outFmt:outFmt.value}
+  if(withInput) cfg.input=inputEl.value
+  return cfg
+}
+function encodeCfg(cfg){return btoa(unescape(encodeURIComponent(JSON.stringify(cfg))))}
+function decodeCfg(s){try{return JSON.parse(decodeURIComponent(escape(atob(s))))}catch{return null}}
+function applyCfg(c){if(!c) return; modeEl.value=c.mode||'cbc'; opEl.value=c.op||'enc'; keyEl.value=c.key||''; ctrEl.value=c.ctr||''; ivEl.value=c.iv||''; outFmt.value=c.outFmt||'text'; autoHex.checked = c.auto!==undefined?c.auto:true; inputEl.value=c.input||''}
+document.getElementById('copySetupLink').addEventListener('click',()=>{const url=location.origin+location.pathname+'#'+encodeCfg(currentConfig(true)); navigator.clipboard.writeText(url).then(()=>toast('link copied'))})
+document.getElementById('copyReadme').addEventListener('click',()=>{const lines='Open: ' + (location.origin+location.pathname) + '\\nPaste link params to prefill.'; navigator.clipboard.writeText(lines).then(()=>toast('README copied'))})
+document.getElementById('shareMenuBtn').addEventListener('click',()=>{const m=document.getElementById('shareMenu'); m.style.display=m.style.display==='block'?'none':'block'})
+document.addEventListener('click',e=>{const m=document.getElementById('shareMenu'); if(!e.target.closest('#shareMenuBtn')&&!e.target.closest('#shareMenu')) m.style.display='none'})
+document.getElementById('openQR').addEventListener('click',()=>{const url=location.origin+location.pathname+'#'+encodeCfg(currentConfig(true)); const modal=document.getElementById('qrModal'); modal.style.display='flex'; const box=document.getElementById('qrcode'); box.innerHTML=''; new QRCode(box,{text:url,width:200,height:200}); })
+document.getElementById('closeQR').addEventListener('click',()=>document.getElementById('qrModal').style.display='none')
+if(location.hash){const cfg=decodeCfg(location.hash.slice(1)); if(cfg){applyCfg(cfg); showPage('app')}}
+
+// DEMO
+document.getElementById('run-demo').addEventListener('click',()=>{try{const b=new TextEncoder().encode('ABC');const r=runCrypto('cbc','enc','2b7e151628aed2a6abf7158809cf4f3c','','',b);document.getElementById('demo-out').textContent=bytesToHex(r)}catch(e){document.getElementById('demo-out').textContent=e.message}})
+document.getElementById('demo-to-app').addEventListener('click',e=>{e.preventDefault();applyCfg({mode:'cbc',op:'enc',key:'2b7e151628aed2a6abf7158809cf4f3c',input:'ABC'}); showPage('app')})
+
+// INIT
+showPage('home')
+</script>
+  <script src="aes-filetab-patch.js"></script>
+</body>
+</html>
