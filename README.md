@@ -15,3 +15,4 @@ pytest -q
 
 Web UI
 streamlit run ui/app.py
+link for Dr. Ali: https://relaxed-kataifi-de071e.netlify.app/
