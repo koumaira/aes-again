@@ -15,4 +15,4 @@ pytest -q
 
 Web UI
 streamlit run ui/app.py
-link for Dr. Ali: https://tourmaline-kleicha-ecd3ee.netlify.app/
+link for Dr. Ali: https://effortless-conkies-4796c9.netlify.app/
